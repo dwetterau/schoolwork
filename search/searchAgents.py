@@ -544,6 +544,7 @@ def foodHeuristic(state, problem):
   food_list = foodGrid.asList()
   if len(food_list) == 0:
     return 0
+  food_list.append(position)
   for food in food_list:
     new_set = set()
     new_set.add(food)
@@ -552,9 +553,10 @@ def foodHeuristic(state, problem):
   for i in range(len(food_list)):
     for j in range(i+1, len(food_list)):
       dx, dy = food_list[i][0] - food_list[j][0], food_list[i][1] - food_list[j][1]
-      dist = abs(dx) + abs(dy)
+      dist = (dx*dx + dy*dy)**.5
       edge_queue.push((food_list[i], food_list[j], dist), dist)
   tree_length = 0
+  edges = []
   while len(set_list) > 1:
     cur_edge = edge_queue.pop()
     for i in range(len(set_list)):
@@ -568,10 +570,16 @@ def foodHeuristic(state, problem):
               # merge sets i and j
               set_list[i] = set_list[i].union(set_list[j])
               del set_list[j]
-              tree_length += math.ceil(cur_edge[2])
+              tree_length += cur_edge[2]
+              edges.append(cur_edge)
               break
         break
+  print tree_length
+  print position
+  print edges
+  print food_list
   # find min distance to a point and add to tree_length
+  """
   min_distance = 99999
   for food in food_list:
     dx, dy = food_list[i][0] - position[0], food_list[i][1] - position[1]
@@ -579,7 +587,8 @@ def foodHeuristic(state, problem):
     dist = abs(dx) + abs(dy)
     if dist < min_distance:
       min_distance = dist
-  return tree_length + min_distance
+  """
+  return tree_length
 
 
 
