@@ -491,7 +491,9 @@ def foodHeuristic(state, problem):
   Subsequent calls to this heuristic can access problem.heuristicInfo['wallCount']
   """
   position, foodGrid = state
-  x, y = 0, 0
+  import math
+  
+  """x, y = 0, 0
   width = foodGrid.width
   height = foodGrid.height
   max_dist = 0
@@ -532,7 +534,56 @@ def foodHeuristic(state, problem):
       y += 1
     min_dist += next_closest
   return min_dist 
-  
+  """
+  # Create a minimum spanning tree with the remaining food being the nodes
+  # After this the size of the tree + the distance to the closest node in the
+  # MST will be our heuristic
+
+  # Put all nodes in singleton sets in a list of sets
+  set_list = []
+  food_list = foodGrid.asList()
+  if len(food_list) == 0:
+    return 0
+  for food in food_list:
+    new_set = set()
+    new_set.add(food)
+    set_list.append(new_set)
+  edge_queue = util.PriorityQueue()
+  for i in range(len(food_list)):
+    for j in range(i+1, len(food_list)):
+      dx, dy = food_list[i][0] - food_list[j][0], food_list[i][1] - food_list[j][1]
+      dist = abs(dx) + abs(dy)
+      edge_queue.push((food_list[i], food_list[j], dist), dist)
+  tree_length = 0
+  while len(set_list) > 1:
+    cur_edge = edge_queue.pop()
+    for i in range(len(set_list)):
+      if cur_edge[0] in set_list[i]:
+        if cur_edge[1] in set_list[i]:
+          # Discard the edge
+          continue
+        else:
+          for j in range(len(set_list)):
+            if cur_edge[1] in set_list[j]:
+              # merge sets i and j
+              set_list[i] = set_list[i].union(set_list[j])
+              del set_list[j]
+              tree_length += math.ceil(cur_edge[2])
+              break
+        break
+  # find min distance to a point and add to tree_length
+  min_distance = 99999
+  for food in food_list:
+    dx, dy = food_list[i][0] - position[0], food_list[i][1] - position[1]
+    #dist = (dx*dx + dy*dy)**.5
+    dist = abs(dx) + abs(dy)
+    if dist < min_distance:
+      min_distance = dist
+  return tree_length + min_distance
+
+
+
+
 class ClosestDotSearchAgent(SearchAgent):
   "Search for all food using a sequence of searches"
   def registerInitialState(self, state):
