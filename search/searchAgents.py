@@ -373,21 +373,36 @@ def cornersHeuristic(state, problem):
   "*** YOUR CODE HERE ***"
   visited = state[1]
   i = 0
-  max_distance = 0
-  bad_distance = 0
   num_not = 0
+  next_corner = 0
+  min_distance = 9999
   for corner in visited:
     #compute distance to that corner
     dx, dy = corners[i][0] - state[0][0], corners[i][1] - state[0][1]
     dist = (abs(dx) + abs(dy))
     if not corner:
       num_not += 1
-      if dist > max_distance:
-        max_distance = dist  
-      bad_distance += dist
+      if dist < min_distance:
+        min_distance = dist  
+        next_corner = i
     i += 1
-  return max_distance + num_not + 64 * bad_distance
-
+  if num_not == 0:
+    return 0
+  # Go through all the not visited corners and find the distance to the next closest one
+  to_modify = list(visited)
+  for num_remaining in range(num_not-1):
+    to_modify[next_corner] = True
+    min = 9999
+    for index in range(len(to_modify)):
+        if not to_modify[index]:
+            dx, dy = corners[index][0] - state[0][0], corners[index][1] - state[0][1]
+            dist = (abs(dx) + abs(dy))
+            if dist < min:
+                min = dist
+                next_corner = index
+    min_distance += min
+  return min_distance
+  
 class AStarCornersAgent(SearchAgent):
   "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
   def __init__(self):
@@ -479,30 +494,44 @@ def foodHeuristic(state, problem):
   x, y = 0, 0
   width = foodGrid.width
   height = foodGrid.height
-  total_dist = 0
   max_dist = 0
   min_dist = 99999
   num_food = 0
+  min_loc = (0,0)
   while y < height:
     x = 0
-    adj = False
     while x < width:
       if foodGrid[x][y]:
         num_food += 1
         dx, dy = abs(position[0] - x), abs(position[1] - y)
-        dist = (dx*dx + dy*dy)**.5
-        #man = dx + dy
-        man = dist
-        if man > max_dist:
-          max_dist = man
+        #dist = (dx*dx + dy*dy)**.5
+        man = dx + dy
+        #man = dist
         if man < min_dist:
           min_dist = man
-        total_dist += dist 
+          min_loc = (x, y)
       x += 1
     y += 1
   if num_food == 0:
     min_dist = 0
-  return 10 * total_dist + min_dist + max_dist 
+  elif num_food <= -2:
+    #Find the next closest food to the minimum one
+    x, y = 0, 0
+    next_closest = 99999
+    while y < height:
+      x = 0
+      while x < width:
+        if foodGrid[x][y] and not ((x, y) == min_loc):
+          dx, dy = abs(min_loc[0] - x), abs(min_loc[1] - y)
+          #dist = (dx*dx + dy*dy)**.5
+          man = dx + dy
+          dist = man
+          if dist < next_closest:
+            next_closest = dist
+        x += 1
+      y += 1
+    min_dist += next_closest
+  return min_dist 
   
 class ClosestDotSearchAgent(SearchAgent):
   "Search for all food using a sequence of searches"
@@ -530,8 +559,8 @@ class ClosestDotSearchAgent(SearchAgent):
     problem = AnyFoodSearchProblem(gameState)
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
-  
+    return search.breadthFirstSearch(problem)
+
 class AnyFoodSearchProblem(PositionSearchProblem):
   """
     A search problem for finding a path to any food.
@@ -566,8 +595,19 @@ class AnyFoodSearchProblem(PositionSearchProblem):
     x,y = state
     
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
-
+    if self.food.count() == 0:
+      return True
+    width = self.food.width
+    height = self.food.height
+    cur_x,cur_y = 0, 0
+    while cur_x < width:
+      cur_y = 0
+      while cur_y < height:
+        if self.food[cur_x][cur_y] and (x,y) == (cur_x, cur_y):
+          return True
+        cur_y += 1
+      cur_x += 1
+    return False
 ##################
 # Mini-contest 1 #
 ##################
