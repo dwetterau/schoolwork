@@ -491,51 +491,8 @@ def foodHeuristic(state, problem):
   Subsequent calls to this heuristic can access problem.heuristicInfo['wallCount']
   """
   position, foodGrid = state
-  import math
   
-  """x, y = 0, 0
-  width = foodGrid.width
-  height = foodGrid.height
-  max_dist = 0
-  min_dist = 99999
-  num_food = 0
-  min_loc = (0,0)
-  while y < height:
-    x = 0
-    while x < width:
-      if foodGrid[x][y]:
-        num_food += 1
-        dx, dy = abs(position[0] - x), abs(position[1] - y)
-        #dist = (dx*dx + dy*dy)**.5
-        man = dx + dy
-        #man = dist
-        if man < min_dist:
-          min_dist = man
-          min_loc = (x, y)
-      x += 1
-    y += 1
-  if num_food == 0:
-    min_dist = 0
-  elif num_food <= -2:
-    #Find the next closest food to the minimum one
-    x, y = 0, 0
-    next_closest = 99999
-    while y < height:
-      x = 0
-      while x < width:
-        if foodGrid[x][y] and not ((x, y) == min_loc):
-          dx, dy = abs(min_loc[0] - x), abs(min_loc[1] - y)
-          #dist = (dx*dx + dy*dy)**.5
-          man = dx + dy
-          dist = man
-          if dist < next_closest:
-            next_closest = dist
-        x += 1
-      y += 1
-    min_dist += next_closest
-  return min_dist 
-  """
-  # Create a minimum spanning tree with the remaining food being the nodes
+    # Create a minimum spanning tree with the remaining food being the nodes
   # After this the size of the tree + the distance to the closest node in the
   # MST will be our heuristic
 
@@ -544,6 +501,7 @@ def foodHeuristic(state, problem):
   food_list = foodGrid.asList()
   if len(food_list) == 0:
     return 0
+  # Add yourself to the point list to be included in the MST
   food_list.append(position)
   for food in food_list:
     new_set = set()
@@ -553,7 +511,8 @@ def foodHeuristic(state, problem):
   for i in range(len(food_list)):
     for j in range(i+1, len(food_list)):
       dx, dy = food_list[i][0] - food_list[j][0], food_list[i][1] - food_list[j][1]
-      dist = (dx*dx + dy*dy)**.5
+      #dist = (dx*dx + dy*dy)**.5
+      dist = abs(dx) + abs(dy)
       edge_queue.push((food_list[i], food_list[j], dist), dist)
   tree_length = 0
   edges = []
@@ -574,24 +533,29 @@ def foodHeuristic(state, problem):
               edges.append(cur_edge)
               break
         break
-  print tree_length
-  print position
-  print edges
-  print food_list
-  # find min distance to a point and add to tree_length
-  """
-  min_distance = 99999
-  for food in food_list:
-    dx, dy = food_list[i][0] - position[0], food_list[i][1] - position[1]
-    #dist = (dx*dx + dy*dy)**.5
-    dist = abs(dx) + abs(dy)
-    if dist < min_distance:
-      min_distance = dist
-  """
-  return tree_length
-
-
-
+  # Traverse vertical and horizontal edges in the MST. If they intersect with 
+  # a wall, add 1-3 to account for moving around it that it will have to do
+  edge_penalty = 0 
+  for edge in edges:
+    dx = edge[0][0] - edge[1][0]
+    dy = edge[0][1] - edge[1][1]
+    if dx == 0:
+      # Vertical edge
+      min_y = min(edge[0][1], edge[1][1])
+      max_y = max(edge[0][1], edge[1][1])
+      for y in range(min_y, max_y):
+        if problem.walls[edge[0][0]][y]:
+          edge_penalty += 1
+          break
+    elif dy == 0:
+      # Horizontal edge
+      min_x = min(edge[0][0], edge[1][0])
+      max_x = max(edge[0][0], edge[1][0])
+      for x in range(min_x, max_x):
+        if problem.walls[x][edge[0][1]]:
+          edge_penalty += 1
+          break
+  return tree_length + edge_penalty * 3 
 
 class ClosestDotSearchAgent(SearchAgent):
   "Search for all food using a sequence of searches"
@@ -678,7 +642,18 @@ class ApproximateSearchAgent(Agent):
   def registerInitialState(self, state):
     "This method is called before any moves are made."
     "*** YOUR CODE HERE ***"
-    
+    self.searchFunction = lambda prob: search.aStarSearch(prob, foodHeuristic)
+    self.searchType = FoodSearchProblem
+ 
+    if self.searchFunction == None: raise Exception, "No search function provided for SearchAgent"
+    starttime = time.time()
+    problem = self.searchType(state) # Makes a new search problem
+    self.actions  = self.searchFunction(problem) # Find a path
+    totalCost = problem.getCostOfActions(self.actions)
+    print('Path found with total cost of %d in %.1f seconds' % (totalCost, time.time() - starttime))
+    if '_expanded' in dir(problem): print('Search nodes expanded: %d' % problem._expanded)
+
+
   def getAction(self, state):
     """
     From game.py: 
@@ -686,7 +661,13 @@ class ApproximateSearchAgent(Agent):
     Directions.{North, South, East, West, Stop}
     """ 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    if 'actionIndex' not in dir(self): self.actionIndex = 0
+    i = self.actionIndex
+    self.actionIndex += 1
+    if i < len(self.actions):
+      return self.actions[i]    
+    else:
+      return Directions.STOP
     
 def mazeDistance(point1, point2, gameState):
   """

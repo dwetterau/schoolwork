@@ -242,10 +242,10 @@ def aStarSearch(problem, heuristic=nullHeuristic):
   costmap = {}
   actions = []
   queue = util.PriorityQueue()
-  queue.push(problem.getStartState(),0)
 
   backtrackmap[problem.getStartState()] = []   
   costmap[problem.getStartState()] = heuristic(problem.getStartState(), problem)
+  queue.push(problem.getStartState(),heuristic(problem.getStartState(), problem))
   visited = set()
   
   endpoint = None
@@ -260,14 +260,15 @@ def aStarSearch(problem, heuristic=nullHeuristic):
     for succ_tuple in problem.getSuccessors(cur):
       succ = succ_tuple[0]
       if succ not in visited:
-        cost = succ_tuple[2] + old_cost + heuristic(succ, problem)
+        cost = succ_tuple[2] + old_cost
         if (not succ in costmap) or cost < costmap[succ]:
+          costmap[succ] = cost
+          cost = succ_tuple[2] + old_cost + heuristic(succ, problem)
           list = []
           for ele in previous_path:
             list.append(ele)
           list.append(succ_tuple[1])
           backtrackmap[succ] = list
-          costmap[succ] = cost
           queue.push(succ, cost)
     # Erase previous list to save some space
     # The map will only store paths to the fringe
