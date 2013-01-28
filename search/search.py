@@ -124,13 +124,11 @@ def breadthFirstSearch(problem):
   "Search the shallowest nodes in the search tree first. [p 81]"
   "*** YOUR CODE HERE ***"
   backtrackmap = {}
-  #backtrackindex = {}
   actions = []
   queue = util.Queue()
   queue.push(problem.getStartState())
 
   backtrackmap[problem.getStartState()] = []   
-  #backtrackindex[0] = problem.getStartState()
 
   endpoint = None
   while not queue.isEmpty():
@@ -147,46 +145,11 @@ def breadthFirstSearch(problem):
           list.append(ele)
         list.append(succ_tuple[1])
         backtrackmap[succ] = list
-    
-        #if not depth + 1 in backtrackindex:
-        #  backtrackindex[depth + 1] = []
-        #backtrackindex[depth + 1].append(succ)
         queue.push(succ)
     # Erase previous list to save some space
     # The map will only store paths to the fringe
-    backtrackmap[cur] = [0]
-  actions = backtrackmap[endpoint]
-  
-  #backtrack with the map to get the right actions
-  """actions = []
-  enddepth = backtrackmap[endpoint]
-  last = endpoint
-  while enddepth > 0:
-    toLookAt = backtrackindex[enddepth-1]
-    # Really dumb special case because dictionary doesn't like lists of a single tuple
-    if enddepth == 1:
-      toLookAt = [toLookAt]
-    foundLoc = False
-    for loc in toLookAt:
-      list = problem.getSuccessors(loc)
-      inside = False
-      for ele in list:
-        if ele[0] == last:
-          actions.append(ele[1])
-          last = loc
-          inside = True
-          break
-      if inside:
-        foundLoc = True
-        break
-    if foundLoc:
-      enddepth -= 1
-    else:
-      print "Couldn't backtrack"
-      break
-  #reverse actions
-  actions.reverse()"""
-  return actions
+    backtrackmap[cur] = []
+  return backtrackmap[endpoint]
 
 def uniformCostSearch(problem):
   "Search the node of least total cost first. "

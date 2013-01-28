@@ -619,19 +619,7 @@ class AnyFoodSearchProblem(PositionSearchProblem):
     x,y = state
     
     "*** YOUR CODE HERE ***"
-    if self.food.count() == 0:
-      return True
-    width = self.food.width
-    height = self.food.height
-    cur_x,cur_y = 0, 0
-    while cur_x < width:
-      cur_y = 0
-      while cur_y < height:
-        if self.food[cur_x][cur_y] and (x,y) == (cur_x, cur_y):
-          return True
-        cur_y += 1
-      cur_x += 1
-    return False
+    return self.food[x][y]
 ##################
 # Mini-contest 1 #
 ##################
@@ -642,17 +630,93 @@ class ApproximateSearchAgent(Agent):
   def registerInitialState(self, state):
     "This method is called before any moves are made."
     "*** YOUR CODE HERE ***"
-    self.searchFunction = lambda prob: search.aStarSearch(prob, foodHeuristic)
-    self.searchType = FoodSearchProblem
- 
-    if self.searchFunction == None: raise Exception, "No search function provided for SearchAgent"
-    starttime = time.time()
-    problem = self.searchType(state) # Makes a new search problem
-    self.actions  = self.searchFunction(problem) # Find a path
-    totalCost = problem.getCostOfActions(self.actions)
-    print('Path found with total cost of %d in %.1f seconds' % (totalCost, time.time() - starttime))
-    if '_expanded' in dir(problem): print('Search nodes expanded: %d' % problem._expanded)
+    self.actions = []
+    currentState = state
+      
+    nextPathSegment = self.getPathToNextFood(currentState) # The missing piece
+    self.actions += nextPathSegment
+    self.actionIndex = 0
 
+    # call to get path to next target dot
+  
+  def getPathToNextFood(self, gameState):
+    "Returns a path (a list of actions) to the closest dot, starting from gameState"
+    # Here are some useful elements of the startState
+    startPosition = gameState.getPacmanPosition()
+    food = gameState.getFood()
+    walls = gameState.getWalls()
+    problem = AnyFoodSearchProblem(gameState)
+
+    "*** YOUR CODE HERE ***"
+    return self.getPathToBestFood(problem, food)
+
+  def getPathToBestFood(self, problem, food):
+    backtrackmap = {}
+    queue = util.Queue()
+    queue.push(problem.getStartState())
+
+    backtrackmap[problem.getStartState()] = []   
+    states = []
+    while not queue.isEmpty():
+      cur = queue.pop()
+      if problem.isGoalState(cur):
+        states.append(cur)
+        continue
+      previous_path = backtrackmap[cur]
+      for succ_tuple in problem.getSuccessors(cur):
+        succ = succ_tuple[0]
+        if succ not in backtrackmap:
+          list = []
+          for ele in previous_path:
+            list.append(ele)
+          list.append(succ_tuple[1])
+          backtrackmap[succ] = list
+          queue.push(succ)
+      # Erase previous list to save some space
+      # The map will only store paths to the points or the very far edges
+      backtrackmap[cur] = []
+    # Determine the best state in states which is the one we will go to
+    best = states[0]
+    depth = min(3, food.count() - 1)
+    bestScore = 99999 * depth
+    for s in states:
+      cost = len(backtrackmap[s])
+      score = self.getScoreOfState(s, problem, depth, [s])
+      if 4 * cost < score:
+        return backtrackmap[s]
+      score = cost + score
+      if score < bestScore:
+        bestScore = score
+        best = s
+    return backtrackmap[best]
+  
+  def getScoreOfState(self, state, problem, depth, used):
+    if depth == 0:
+      return 0
+    backtrackmap = {}
+    queue = util.Queue()
+    queue.push(state)
+
+    backtrackmap[state] = 0
+    endpoint = None
+    while not queue.isEmpty():
+      cur = queue.pop()
+      if problem.isGoalState(cur) and not cur in used:
+        endpoint = cur
+        break 
+      previous_length = backtrackmap[cur]
+      for succ_tuple in problem.getSuccessors(cur):
+        succ = succ_tuple[0]
+        if succ not in backtrackmap:
+          backtrackmap[succ] = previous_length + 1
+          queue.push(succ)
+    if not endpoint == None:
+      used.append(endpoint)
+      return backtrackmap[endpoint] + self.getScoreOfState(state, problem, \
+        depth - 1, used)
+    else:
+      print "Error while calculating recursive cose"
+      return 0
 
   def getAction(self, state):
     """
@@ -667,6 +731,10 @@ class ApproximateSearchAgent(Agent):
     if i < len(self.actions):
       return self.actions[i]    
     else:
+      if state.getFood().count() > 0:
+        self.actions = self.getPathToNextFood(state)
+        self.actionIndex = 0
+        return self.getAction(state)
       return Directions.STOP
     
 def mazeDistance(point1, point2, gameState):
