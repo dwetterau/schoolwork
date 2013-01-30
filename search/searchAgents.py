@@ -677,12 +677,21 @@ class ApproximateSearchAgent(Agent):
       backtrackmap[cur] = []
     # Determine the best state in states which is the one we will go to
     best = states[0]
-    depth = min(3, food.count() - 1)
+    parameter_file = open('parameters', 'r')
+    time = 0
+    """for line in parameter_file:
+        if time == 0:
+            factor = float(line.strip())
+            time += 1
+        elif time == 1:
+            depth = min(int(line.strip()), food.count() - 1)
+    """
+    factor, depth =  4, 3
     bestScore = 99999 * depth
     for s in states:
       cost = len(backtrackmap[s])
       score = self.getScoreOfState(s, problem, depth, [s])
-      if 4 * cost < score:
+      if factor * cost < score:
         return backtrackmap[s]
       score = cost + score
       if score < bestScore:
@@ -712,10 +721,9 @@ class ApproximateSearchAgent(Agent):
           queue.push(succ)
     if not endpoint == None:
       used.append(endpoint)
-      return backtrackmap[endpoint] + self.getScoreOfState(state, problem, \
+      return  backtrackmap[endpoint] + self.getScoreOfState(state, problem, \
         depth - 1, used)
     else:
-      print "Error while calculating recursive cose"
       return 0
 
   def getAction(self, state):
