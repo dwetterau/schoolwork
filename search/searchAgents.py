@@ -501,8 +501,6 @@ def foodHeuristic(state, problem):
   food_list = foodGrid.asList()
   if len(food_list) == 0:
     return 0
-  # Add yourself to the point list to be included in the MST
-  food_list.append(position)
   for food in food_list:
     new_set = set()
     new_set.add(food)
@@ -535,7 +533,7 @@ def foodHeuristic(state, problem):
         break
   # Traverse vertical and horizontal edges in the MST. If they intersect with 
   # a wall, add 1-3 to account for moving around it that it will have to do
-  edge_penalty = 0 
+  edge_penalty = 0
   for edge in edges:
     dx = edge[0][0] - edge[1][0]
     dy = edge[0][1] - edge[1][1]
@@ -555,7 +553,14 @@ def foodHeuristic(state, problem):
         if problem.walls[x][edge[0][1]]:
           edge_penalty += 1
           break
-  return tree_length + edge_penalty * 3 
+  min_dist = 99999
+  # Find the distance to the closest point from you
+  for food in food_list:
+    dx, dy = abs(food[0] - position[0]), abs(food[1] - position[1])
+    if dx + dy < min_dist:
+      min_dist = dx + dy
+
+  return tree_length + 2*edge_penalty + min_dist 
 
 class ClosestDotSearchAgent(SearchAgent):
   "Search for all food using a sequence of searches"
@@ -624,6 +629,12 @@ class AnyFoodSearchProblem(PositionSearchProblem):
 # Mini-contest 1 #
 ##################
 
+class Node:
+  def __init__(self, loc):
+    self.loc = loc
+    self.next = None
+  def setNext(next):
+    self.next = next
 class ApproximateSearchAgent(Agent):
   "Implement your contest entry here.  Change anything but the class name."
   
@@ -631,14 +642,114 @@ class ApproximateSearchAgent(Agent):
     "This method is called before any moves are made."
     "*** YOUR CODE HERE ***"
     self.actions = []
-    currentState = state
-      
-    nextPathSegment = self.getPathToNextFood(currentState) # The missing piece
-    self.actions += nextPathSegment
+    currentState = state      
+    #nextPathSegment = self.getPathToNextFood(currentState) # The missing piece
+    #self.actions += nextPathSegment
     self.actionIndex = 0
+    """ 
+    food_list = state.getFood().asList()
+    cost_map = {}
+    foodCount = len(food_list)
+    foodGrid = state.getFood()
+    #state_list = [state.getPacmanPosition()]
+    #edge_list = []
+    move_map = {}
+    start_node = Node(currentState.getPacmanPosition())
+    node_list = [start_node]
 
-    # call to get path to next target dot
-  
+    def invertMoves(move_list):
+      temp_list = move_list[:] 
+      for i in range(len(temp_list)):
+        if temp_list[i] == "North":
+          temp_list[i] = "South"
+        elif temp_list[i] == "South":
+          temp_list[i] = "North"
+        elif temp_list[i] == "East":
+          temp_list[i] = "West"
+        elif temp_list[i] == "West":
+          temp_list[i] = "East"
+      return temp_list
+
+
+    first = True
+    # Do a greedy search to find the closest food until you have the entire path
+    while len(cost_map) < 2*foodCount:
+      old_loc = currentState.getPacmanPosition()
+      problem = AnyFoodSearchProblem(currentState)
+      moves = search.breadthFirstSearch(problem)
+      for move in moves:
+        currentState = currentState.generateSuccessor(0, move)
+      new_loc = currentState.getPacmanPosition()
+      foodGrid[new_loc[0]][new_loc[1]] = False
+      cost_map[(old_loc, new_loc)] = len(moves)
+      cost_map[(new_loc, old_loc)] = len(moves)
+      move_map[(old_loc, new_loc)] = moves
+      move_map[(new_loc, old_loc)] = invertMoves(moves[::-1])
+      #state_list.append(new_loc)
+      #edge_list.append((old_loc, new_loc))
+      n = Node(new_loc)
+      node_list[len(node_list) - 1].next = n
+      node_list.append(n)
+    def pathCost(costmap, edgelist):
+      sum = 0
+      for i in range(len(edgelist)):
+        sum += costmap[edgelist[i]]
+      return sum 
+
+    def addCosts(edge, costmap, movemap, curstate):
+      if edge not in costmap:
+        moves = mazePath(edge[0], edge[1], curstate)
+        costmap[edge] = len(moves)
+        #movemap[edge] = moves
+        edge = (edge[1], edge[0])
+        costmap[edge] = len(moves)
+        #movemap[edge] = invertMoves(moves[::-1])
+    def reverse(start, end):
+      cur = start
+      prev = None
+      while not cur.loc == end.loc:
+        next = cur.next
+        cur.next = prev
+        prev = cur
+        cur = next
+      cur.next = prev
+
+    for i in range(len(node_list)):
+      print i
+      for j in range(i+1, len(node_list)):
+        # 2-opt exchange
+        # a-b  c-d -> a-d c-b
+        #new_list = list(edge_list)
+        if node_list[i].next == None or node_list[j].next == None:
+          continue
+
+        a = node_list[i]
+        b = node_list[i].next
+        c = node_list[j]
+        d = node_list[j].next
+
+        addCosts((a.loc,c.loc), cost_map, move_map, currentState)
+        addCosts((b.loc,d.loc), cost_map, move_map, currentState)
+        
+
+        if cost_map[(a.loc,c.loc)] + cost_map[(b.loc,d.loc)] < \
+               cost_map[(a.loc,b.loc)] + cost_map[(c.loc,d.loc)]:
+          #Reverse all nodes from b -> c
+          reverse(b, c)
+          a.next = c
+          b.next = d
+    
+    def finalPath(startnode):
+      cur = startnode
+      actions = []
+      while not cur.next == None:
+        actions += mazePath(cur.loc, cur.next.loc, currentState)
+        cur = cur.next
+        #print actions
+      return actions
+    self.actions = finalPath(start_node)
+    """
+
   def getPathToNextFood(self, gameState):
     "Returns a path (a list of actions) to the closest dot, starting from gameState"
     # Here are some useful elements of the startState
@@ -745,6 +856,16 @@ class ApproximateSearchAgent(Agent):
         return self.getAction(state)
       return Directions.STOP
     
+    """if 'actionIndex' not in dir(self): self.actionIndex = 0
+    i = self.actionIndex
+    self.actionIndex += 1
+    if i < len(self.actions):
+      return self.actions[i]    
+    else:
+      return Directions.STOP
+    """
+
+
 def mazeDistance(point1, point2, gameState):
   """
   Returns the maze distance between any two points, using the search functions
@@ -762,3 +883,21 @@ def mazeDistance(point1, point2, gameState):
   assert not walls[x2][y2], 'point2 is a wall: ' + str(point2)
   prob = PositionSearchProblem(gameState, start=point1, goal=point2, warn=False)
   return len(search.bfs(prob))
+
+def mazePath(point1, point2, gameState):
+  """
+  Returns the maze distance between any two points, using the search functions
+  you have already built.  The gameState can be any game state -- Pacman's position
+  in that state is ignored.
+  
+  Example usage: mazeDistance( (2,4), (5,6), gameState)
+  
+  This might be a useful helper function for your ApproximateSearchAgent.
+  """
+  x1, y1 = point1
+  x2, y2 = point2
+  walls = gameState.getWalls()
+  assert not walls[x1][y1], 'point1 is a wall: ' + point1
+  assert not walls[x2][y2], 'point2 is a wall: ' + str(point2)
+  prob = PositionSearchProblem(gameState, start=point1, goal=point2, warn=False)
+  return search.bfs(prob)
