@@ -182,8 +182,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
           min_val = val
           worst_action = action
       if min_val == 2000000000:
-        if agentIndex == 1:
-          min_val = -2000000000
+        min_val = self.evaluationFunction(state)
       return (min_val, worst_action)
     
     pair = getMax(initial_state, 0, 0)
