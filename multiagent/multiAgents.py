@@ -149,7 +149,46 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns the total number of agents in the game
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    initial_state = gameState
+    target_depth = self.depth
+    num_agents = gameState.getNumAgents()
+
+    def getMax(state, agentIndex, depth):
+      if depth == target_depth:
+        return (self.evaluationFunction(state), Directions.STOP)
+      max_val = -2000000000 
+      best_action = Directions.STOP
+      actionList = state.getLegalActions(agentIndex)
+      for action in actionList:
+        newState = state.generateSuccessor(agentIndex, action)
+        val = getMin(newState, agentIndex + 1, depth)[0]
+        if val > max_val:
+          max_val = val
+          best_action = action
+      return (max_val, best_action)
+
+    def getMin(state, agentIndex, depth):
+      min_val = 2000000000 
+      worst_action = Directions.STOP
+      actionList = state.getLegalActions(agentIndex)
+      for action in actionList:
+        newState = state.generateSuccessor(agentIndex, action)
+        val = 0
+        if agentIndex + 1 ==  num_agents:
+          val = getMax(newState, 0, depth + 1)[0]
+        else:
+          val = getMin(newState, agentIndex + 1, depth)[0]
+        if val < min_val:
+          min_val = val
+          worst_action = action
+      if min_val == 2000000000:
+        if agentIndex == 1:
+          min_val = -2000000000
+      return (min_val, worst_action)
+    
+    pair = getMax(initial_state, 0, 0)
+    print "minimax cost= ", pair[0]
+    return pair[1]
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
   """
