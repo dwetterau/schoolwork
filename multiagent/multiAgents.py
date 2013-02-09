@@ -91,7 +91,8 @@ class ReflexAgent(Agent):
     #print successorGameState.getScore()
     if min_ghost_dist == 0:
         min_ghost_dist = 1
-    return successorGameState.getScore() - min_food_dist - 10/min_ghost_dist
+    return successorGameState.getScore() - min_food_dist - 5/min_ghost_dist
+    #return min_food_dist - 5/min_ghost_dist
 
 def scoreEvaluationFunction(currentGameState):
   """
@@ -321,6 +322,7 @@ def betterEvaluationFunction(currentGameState):
   # Put all nodes in singleton sets in a list of sets
   set_list = []
   food_list = foodGrid.asList()
+  """
   if len(food_list) == 0:
     return 0
   for food in food_list:
@@ -383,7 +385,7 @@ def betterEvaluationFunction(currentGameState):
       min_dist = dx + dy
   
   food_score = 2.0*edge_penalty + min_dist + tree_length
-    
+  """ 
   # Find the average distance between us and all of the ghosts
   ghostStates = state.getGhostPositions()
   distance_sum = 0
@@ -410,18 +412,26 @@ def betterEvaluationFunction(currentGameState):
           min_ghost_dist = dx + dy
       if dx + dy > max_ghost_dist:
           max_ghost_dist = dx + dy
+  """
   if min_ghost_dist == 0:
     min_ghost_dist = 1
   if food_score == 0:
     food_score = 1
   if ghost_score == 0:
     ghost_score = 1
+  """
   # food_score = the approximate distance left to travel to eat all of the food    - We want this to decrease
   # ghost_score = the average distance between you and all of the ghosts           - We want this to be high
   # min_ghost_dist = the minimum distance between you and a ghost                  - We want this to be high
   # max_food_dist = the maximum distance to any food                               - We want this to go down
-  return 10/food_score - 0/(ghost_score*ghost_score) - 10/min_ghost_dist - 0*max_food_dist - 100*min_food_dist
-
+#  return 10/food_score - 0/(ghost_score*ghost_score) - 10/min_ghost_dist - 0*max_food_dist - 100*min_food_dist
+  count = foodGrid.count()
+  if count == 0:
+    count = -10000000
+    #return 2000000000
+  if min_ghost_dist == 0:
+    return -2000000000
+  return -5/min_ghost_dist - 1.5*min_food_dist - 20*count
 
 # Abbreviation
 better = betterEvaluationFunction
@@ -441,4 +451,5 @@ class ContestAgent(MultiAgentSearchAgent):
     """
     "*** YOUR CODE HERE ***"
     util.raiseNotDefined()
+
 
