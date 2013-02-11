@@ -431,7 +431,11 @@ def betterEvaluationFunction(currentGameState):
     #return 2000000000
   if min_ghost_dist == 0:
     return -2000000000
-  return -5/min_ghost_dist - 1.5*min_food_dist - 20*count
+  if max_ghost_dist == 0:
+    max_ghost_dist = 1
+  if max_food_dist == 0:
+    max_food_dist = 1
+  return -2/min_ghost_dist - 1.5*min_food_dist - 20*count + 1.5/max_food_dist - 1.5/max_ghost_dist
 
 # Abbreviation
 better = betterEvaluationFunction
