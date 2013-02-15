@@ -347,9 +347,9 @@ def betterEvaluationFunction(currentGameState):
       dist = dx + dy
       if state.scaredTimer > 0:
         if dist == 0:
-          kill_score += 2000000000
+          kill_score += 100000
         else:  
-          kill_score += 1.5*state.scaredTimer / dist
+          kill_score += 1.7*state.scaredTimer / dist
       else:
         if dist < min_ghost_dist:
           min_ghost_dist = dist
@@ -374,12 +374,12 @@ def betterEvaluationFunction(currentGameState):
     max_food_dist = 1
   #ghosts are either "scared" or not, so maybe have separate min/max distances for scared ghosts and not scared, and then minimize distance to scared ones instead of maximizing or something
   #i think it's ghostState.scaredTimer > 0 or somethin like that
-  return - 2/(min_ghost_dist*min_ghost_dist) \
+  return - 2.2/(min_ghost_dist) \
          - 1.5*min_food_dist \
          - 20*count \
          + kill_score \
-         - 1.5/max_ghost_dist 
-         #+ 1.5/max_food_dist \
+         + 1.5/max_food_dist \
+         - 1.5/max_ghost_dist \
 
 # Abbreviation
 better = betterEvaluationFunction
