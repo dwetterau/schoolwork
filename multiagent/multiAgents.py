@@ -322,6 +322,8 @@ def betterEvaluationFunction(currentGameState):
   # Put all nodes in singleton sets in a list of sets
   set_list = []
   food_list = foodGrid.asList()
+  #can add these to heuristic somehow. Doesn't need to eat them to win though, so just adding to food list might not be best idea..
+  #print state.getCapsules()
   """
   if len(food_list) == 0:
     return 0
@@ -435,6 +437,8 @@ def betterEvaluationFunction(currentGameState):
     max_ghost_dist = 1
   if max_food_dist == 0:
     max_food_dist = 1
+  #ghosts are either "scared" or not, so maybe have separate min/max distances for scared ghosts and not scared, and then minimize distance to scared ones instead of maximizing or something
+  #i think it's ghostState.scaredTimer > 0 or somethin like that
   return -2/min_ghost_dist - 1.5*min_food_dist - 20*count + 1.5/max_food_dist - 1.5/max_ghost_dist
 
 # Abbreviation
