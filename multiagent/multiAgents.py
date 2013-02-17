@@ -380,7 +380,7 @@ def betterEvaluationFunction(currentGameState):
          + kill_score \
          + 1.5/max_food_dist \
          - 1.5/max_ghost_dist \
-
+         + currentGameState.getScore() \
 # Abbreviation
 better = betterEvaluationFunction
 
