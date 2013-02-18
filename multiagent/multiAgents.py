@@ -384,6 +384,85 @@ def betterEvaluationFunction(currentGameState):
 # Abbreviation
 better = betterEvaluationFunction
 
+
+def contestEvaluationFunction(currentGameState):
+  state = currentGameState
+  position = state.getPacmanPosition()
+  foodGrid = state.getFood() 
+  walls = state.getWalls()
+  food_list = foodGrid.asList()
+  # Create a minimum spanning tree with the remaining food being the nodes
+  # After this the size of the tree + the distance to the closest node in the
+  # MST will be our heuristic
+
+  # Put all nodes in singleton sets in a list of sets
+  #can add these to heuristic somehow. Doesn't need to eat them to win though, so just adding to food list might not be best idea.
+  # Find the average distance between us and all of the ghosts
+  ghostStates = state.getGhostStates()
+  distance_sum = 0
+  newPos = position
+  #for state in ghostStates:
+  #  dx, dy = abs(state[0] - newPos[0]), abs(state[1] - newPos[1])
+  #  distance_sum += dx + dy
+
+  #ghost_score = distance_sum / float(len(ghostStates))
+ 
+  min_food_dist = 99999
+  max_food_dist = 0
+  min_ghost_dist = 99999
+  max_ghost_dist = 0
+  kill_score = 0
+  for food in food_list:
+      dx, dy = abs(food[0]-newPos[0]), abs(food[1]-newPos[1])
+      if dx + dy < min_food_dist:
+          min_food_dist = dx + dy
+      if dx + dy > max_food_dist:
+          max_food_dist = dx + dy
+  
+  for state in ghostStates:
+      pos = state.getPosition()
+      dx, dy = abs(pos[0] - newPos[0]), abs(pos[1] - newPos[1])
+      dist = dx + dy
+      if state.scaredTimer > 0:
+        if dist == 0:
+          kill_score += 100000
+        else:  
+          kill_score += 1.7*state.scaredTimer / dist
+      else:
+        if dist < min_ghost_dist:
+          min_ghost_dist = dist
+        if dist > max_ghost_dist:
+          max_ghost_dist = dist
+  
+  # food_score = the approximate distance left to travel to eat all of the food    - We want this to decrease
+  # ghost_score = the average distance between you and all of the ghosts           - We want this to be high
+  # min_ghost_dist = the minimum distance between you and a ghost                  - We want this to be high
+  # max_food_dist = the maximum distance to any food                               - We want this to go down
+#  return 10/food_score - 0/(ghost_score*ghost_score) - 10/min_ghost_dist - 0*max_food_dist - 100*min_food_dist
+  count = foodGrid.count()
+  if count == 0:
+    count = -2000000000 #if win, win
+    #return 2000000000
+  if min_ghost_dist == 0:
+    min_ghost_dist = .0001 
+    #return -2000000000 #Don't die pacman!
+  if max_ghost_dist == 0:
+    max_ghost_dist = 1
+  if max_food_dist == 0:
+    max_food_dist = 1
+  #ghosts are either "scared" or not, so maybe have separate min/max distances for scared ghosts and not scared, and then minimize distance to scared ones instead of maximizing or something
+  #i think it's ghostState.scaredTimer > 0 or somethin like that
+  return - 100/(min_ghost_dist**2) \
+         - 2*min_food_dist \
+         - 20*count \
+         + kill_score \
+         + 1.5/max_food_dist \
+         - 1.5/max_ghost_dist \
+         + currentGameState.getScore() \
+
+
+
+
 class ContestAgent(MultiAgentSearchAgent):
   """
     Your agent for the mini-contest
@@ -398,6 +477,50 @@ class ContestAgent(MultiAgentSearchAgent):
       just make a beeline straight towards Pacman (or away from him if they're scared!)
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    initial_state = gameState
+    target_depth = self.depth
+    #target_depth = 4
+    num_agents = gameState.getNumAgents()
+
+    def getMax(state, agentIndex, depth):
+      if depth == target_depth:
+        return (contestEvaluationFunction(state), Directions.STOP)
+      max_val = -2000000000 
+      best_action = Directions.STOP
+      actionList = state.getLegalActions(agentIndex)
+      for action in actionList:
+        newState = state.generateSuccessor(agentIndex, action)
+        val = getMin(newState, agentIndex + 1, depth)[0]
+        if depth ==0:
+          print str(action) + ": " + str(val)
+        if val > max_val:
+          max_val = val
+          best_action = action
+      if max_val == -200000000:
+        max_val = self.evaluationFunction(state)
+      if depth == 0:
+        print "chose (" + str(max_val) + ", " + str(best_action) + ")"
+      return (max_val, best_action)
+
+    def getMin(state, agentIndex, depth):
+      min_val = 2000000000 
+      sum = 0
+      worst_action = Directions.STOP
+      actionList = state.getLegalActions(agentIndex)
+      for action in actionList:
+        newState = state.generateSuccessor(agentIndex, action)
+        if agentIndex + 1 ==  num_agents:
+          sum += getMax(newState, 0, depth + 1)[0]
+        else:
+          sum += getMin(newState, agentIndex + 1, depth)[0]
+      if sum == 0:
+        return (self.evaluationFunction(state), worst_action)
+      sum /= float(len(actionList))
+      return (sum, worst_action)
+    
+    pair = getMax(initial_state, 0, 0)
+    return pair[1]
+
+    #util.raiseNotDefined()
 
 
