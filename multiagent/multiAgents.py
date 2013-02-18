@@ -444,7 +444,7 @@ def contestEvaluationFunction(currentGameState):
     count = -2000000000 #if win, win
     #return 2000000000
   if min_ghost_dist == 0:
-    min_ghost_dist = .0001 
+    min_ghost_dist = .001 
     #return -2000000000 #Don't die pacman!
   if max_ghost_dist == 0:
     max_ghost_dist = 1
@@ -452,7 +452,7 @@ def contestEvaluationFunction(currentGameState):
     max_food_dist = 1
   #ghosts are either "scared" or not, so maybe have separate min/max distances for scared ghosts and not scared, and then minimize distance to scared ones instead of maximizing or something
   #i think it's ghostState.scaredTimer > 0 or somethin like that
-  return - 100/(min_ghost_dist**2) \
+  return - 2.2/(min_ghost_dist**2) \
          - 2*min_food_dist \
          - 20*count \
          + kill_score \
@@ -491,15 +491,15 @@ class ContestAgent(MultiAgentSearchAgent):
       for action in actionList:
         newState = state.generateSuccessor(agentIndex, action)
         val = getMin(newState, agentIndex + 1, depth)[0]
-        if depth ==0:
-          print str(action) + ": " + str(val)
+        #if depth ==0:
+          #print str(action) + ": " + str(val)
         if val > max_val:
           max_val = val
           best_action = action
       if max_val == -200000000:
-        max_val = self.evaluationFunction(state)
-      if depth == 0:
-        print "chose (" + str(max_val) + ", " + str(best_action) + ")"
+        max_val = contestEvaluationFunction(state)
+      #if depth == 0:
+        #print "chose (" + str(max_val) + ", " + str(best_action) + ")"
       return (max_val, best_action)
 
     def getMin(state, agentIndex, depth):
@@ -514,7 +514,7 @@ class ContestAgent(MultiAgentSearchAgent):
         else:
           sum += getMin(newState, agentIndex + 1, depth)[0]
       if sum == 0:
-        return (self.evaluationFunction(state), worst_action)
+        return (contestEvaluationFunction(state), worst_action)
       sum /= float(len(actionList))
       return (sum, worst_action)
     
