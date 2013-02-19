@@ -399,7 +399,7 @@ def contestEvaluationFunction(currentGameState):
   foodGrid = state.getFood() 
   walls = state.getWalls()
   food_list = foodGrid.asList()
-    ghostStates = state.getGhostStates()
+  ghostStates = state.getGhostStates()
   distance_sum = 0
   newPos = position
    
