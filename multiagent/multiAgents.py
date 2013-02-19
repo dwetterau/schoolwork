@@ -69,7 +69,10 @@ class ReflexAgent(Agent):
     newGhostStates = successorGameState.getGhostPositions()
 
     "*** YOUR CODE HERE ***"
-    # Min distance to food is good, distance to ghost is bad
+    # The idea here is to find min/max distances to the food and ghosts
+    # After thus we just use an arbitrary linear combination with minimum food
+    # and minimum ghost distances and add in the actual score of the game. 
+
     food_list = oldFood.asList()
     min_food_dist = 99999
     max_food_dist = 0
@@ -150,6 +153,10 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns the total number of agents in the game
     """
     "*** YOUR CODE HERE ***"
+    # We implemented minimax with two functions that we call recursively. The
+    # Target depth is only realized when we call maximize on the pacman agent.
+    # We call minimize on each ghost recursively in the set order of agents.
+
     initial_state = gameState
     target_depth = self.depth
     num_agents = gameState.getNumAgents()
@@ -201,6 +208,10 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
       Returns the minimax action using self.depth and self.evaluationFunction
     """
     "*** YOUR CODE HERE ***"
+    # Alpha beta used the same code as minimax except we passed in target mins
+    # and maxes so that if we were minimizing and our min was already lower than
+    # the max, we could stop recursing.
+
     initial_state = gameState
     target_depth = self.depth
     num_agents = gameState.getNumAgents()
@@ -260,6 +271,10 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
       legal moves.
     """
     "*** YOUR CODE HERE ***"
+    # All we had to do for expectimax was average while minimizing to return 
+    # Not the worst action, but the average of the bad moves. We eliminated
+    # the pruning from alpha beta for this
+
     initial_state = gameState
     target_depth = self.depth
     num_agents = gameState.getNumAgents()
@@ -305,29 +320,25 @@ def betterEvaluationFunction(currentGameState):
     Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
     evaluation function (question 5).
 
-    DESCRIPTION: <write something here so we know what you did>
+    DESCRIPTION: For this evaluation, we determined the distances to the closest
+    and furthest food and ghosts. In addition, we checked to see if ghosts were
+    eatable, and if they were we added some points for how eatable they were 
+    (ratio between distance and time left). Additionally we subtracted for all
+    of the food left. We also added in the score of the game to the number we
+    returned. 
+
   """
   "*** YOUR CODE HERE ***"
+  #Description up above
   state = currentGameState
   position = state.getPacmanPosition()
   foodGrid = state.getFood() 
   walls = state.getWalls()
   food_list = foodGrid.asList()
-  # Create a minimum spanning tree with the remaining food being the nodes
-  # After this the size of the tree + the distance to the closest node in the
-  # MST will be our heuristic
 
-  # Put all nodes in singleton sets in a list of sets
-  #can add these to heuristic somehow. Doesn't need to eat them to win though, so just adding to food list might not be best idea.
-  # Find the average distance between us and all of the ghosts
   ghostStates = state.getGhostStates()
   distance_sum = 0
   newPos = position
-  #for state in ghostStates:
-  #  dx, dy = abs(state[0] - newPos[0]), abs(state[1] - newPos[1])
-  #  distance_sum += dx + dy
-
-  #ghost_score = distance_sum / float(len(ghostStates))
  
   min_food_dist = 99999
   max_food_dist = 0
@@ -360,7 +371,6 @@ def betterEvaluationFunction(currentGameState):
   # ghost_score = the average distance between you and all of the ghosts           - We want this to be high
   # min_ghost_dist = the minimum distance between you and a ghost                  - We want this to be high
   # max_food_dist = the maximum distance to any food                               - We want this to go down
-#  return 10/food_score - 0/(ghost_score*ghost_score) - 10/min_ghost_dist - 0*max_food_dist - 100*min_food_dist
   count = foodGrid.count()
   if count == 0:
     count = -2000000000 #if win, win
@@ -372,8 +382,6 @@ def betterEvaluationFunction(currentGameState):
     max_ghost_dist = 1
   if max_food_dist == 0:
     max_food_dist = 1
-  #ghosts are either "scared" or not, so maybe have separate min/max distances for scared ghosts and not scared, and then minimize distance to scared ones instead of maximizing or something
-  #i think it's ghostState.scaredTimer > 0 or somethin like that
   return - 2.2/(min_ghost_dist) \
          - 1.5*min_food_dist \
          - 20*count \
@@ -391,22 +399,10 @@ def contestEvaluationFunction(currentGameState):
   foodGrid = state.getFood() 
   walls = state.getWalls()
   food_list = foodGrid.asList()
-  # Create a minimum spanning tree with the remaining food being the nodes
-  # After this the size of the tree + the distance to the closest node in the
-  # MST will be our heuristic
-
-  # Put all nodes in singleton sets in a list of sets
-  #can add these to heuristic somehow. Doesn't need to eat them to win though, so just adding to food list might not be best idea.
-  # Find the average distance between us and all of the ghosts
-  ghostStates = state.getGhostStates()
+    ghostStates = state.getGhostStates()
   distance_sum = 0
   newPos = position
-  #for state in ghostStates:
-  #  dx, dy = abs(state[0] - newPos[0]), abs(state[1] - newPos[1])
-  #  distance_sum += dx + dy
-
-  #ghost_score = distance_sum / float(len(ghostStates))
- 
+   
   min_food_dist = 99999
   max_food_dist = 0
   min_ghost_dist = 99999
