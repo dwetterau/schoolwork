@@ -304,7 +304,42 @@ class JointParticleFilter:
     emissionModels = [busters.getObservationDistribution(dist) for dist in noisyDistances]
 
     "*** YOUR CODE HERE ***"
-  
+    pacmanPosition = gameState.getPacmanPosition()
+    distrib = self.getBeliefDistribution()
+    
+    new_distrib = util.Counter()
+    for p in distrib:
+        new_distrib[p] = distrib[p]
+
+    for i in range(len(noisyDistances)):
+        if noisyDistances[i] == 999:
+            for p in distrib:
+               old_prob = new_distrib[p]
+               new_distrib[p] = 0
+               temp = list(p)
+               temp[i] = (2*i + 1, 1)
+               p = tuple(temp)
+               new_distrib[p] += old_prob    
+    distrib = new_distrib
+    for p in distrib:
+        for i in range(len(noisyDistances)):
+            if noisyDistances[i] == 999:
+                continue
+            trueDistance = util.manhattanDistance(p[i], pacmanPosition)
+            distrib[p] *= emissionModels[i][trueDistance]
+    redo = True
+    for p in distrib:
+        if distrib[p]:
+            redo = False
+            break
+    if redo:
+        self.initializeParticles()
+    else:
+        newParticles = []
+        for i in range(self.numParticles):
+            newParticles.append(util.sample(distrib))
+        self.particles = newParticles
+
   def getBeliefDistribution(self):
     dist = util.Counter()
     for part in self.particles: dist[part] += 1
