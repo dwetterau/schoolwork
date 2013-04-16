@@ -82,19 +82,20 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
                 denom = all_distributions[k][label][entry][0] + all_distributions[k][label][entry][1] 
                 all_distributions[k][label][entry][1] /= float(denom)
                 all_distributions[k][label][entry][0] /= float(denom)
-    
+    best_k = 0
     for k in all_distributions:
         self.distribution = all_distributions[k]
         guesses = self.classify(validationData)
         wrong = 0
-        for i in range(len(trainingLabels)):
-            if not guesses[i] == trainingLabels[i]:
+        for i in range(len(validationLabels)):
+            if not guesses[i] == validationLabels[i]:
                 wrong += 1
         if wrong < min:
             min = wrong
             best_distribution = self.distribution
+            best_k = k
     self.distribution = best_distribution
-        
+    return best_k 
 
   def classify(self, testData):
     """
@@ -136,12 +137,16 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
             P(feature=1 | label1)/P(feature=1 | label2) 
     """
     featuresOdds = []
-        
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
-
-    return featuresOdds
+    for feature in self.features:
+        featuresOdds.append((feature, self.distribution[label1][feature][1] / self.distribution[label2][feature][1])) 
     
-
-    
-      
+    featuresOdds.sort(key=lambda x:x[1], reverse=True)
+    count = 0
+    toReturn = []
+    for feature in featuresOdds:
+        count += 1
+        toReturn.append(feature[0])
+        if count == 100:
+            break
+    return toReturn
