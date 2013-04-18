@@ -140,7 +140,6 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
     "*** YOUR CODE HERE ***"
     for feature in self.features:
         featuresOdds.append((feature, self.distribution[label1][feature][1] / self.distribution[label2][feature][1])) 
-    
     featuresOdds.sort(key=lambda x:x[1], reverse=True)
     count = 0
     toReturn = []
@@ -150,3 +149,4 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
         if count == 100:
             break
     return toReturn
+    

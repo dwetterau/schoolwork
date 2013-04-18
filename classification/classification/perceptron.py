@@ -43,7 +43,7 @@ class PerceptronClassifier:
                 max = sum
                 guess = label
         if not guess == trainingLabels[i]:
-            self.weights[guess] - trainingData[i]
+            self.weights[guess] -= trainingData[i]
             self.weights[trainingLabels[i]] += trainingData[i]
 
   def classify(self, data ):
@@ -75,7 +75,6 @@ class PerceptronClassifier:
     for key in diff:
         featuresOdds.append((key, diff[key]))
     featuresOdds.sort(reverse=True, key= lambda x:x[1])
-    print featuresOdds
     count = 0
     toReturn = []
     for feature in featuresOdds:
@@ -83,7 +82,6 @@ class PerceptronClassifier:
         toReturn.append(feature[0])
         if count == 100:
             break
-    print toReturn
     return toReturn
     
 

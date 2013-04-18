@@ -39,7 +39,6 @@ def basicFeatureExtractorFace(datum):
   each pixel in the provided datum is an edge (1) or no edge (0)
   """
   a = datum.getPixels()
-
   features = util.Counter()
   for x in range(FACE_DATUM_WIDTH):
     for y in range(FACE_DATUM_HEIGHT):
@@ -61,6 +60,30 @@ def enhancedFeatureExtractorDigit(datum):
   ##
   """
   features =  basicFeatureExtractorDigit(datum)
+  # Loops feature. count the number of loops.
+  # Big loop (Height > 2/3*HEIGHT)
+  # Two Loops (one in top half, one in bottom)
+  # Small Top (one in top half)
+  # Small Bottom (one in bottom half)
+  # Yeah this probably won't work too well.... We can still try it though...
+
+
+  # returns a True/False tuple and if true, also the total height
+  for y in range(DIGIT_DATUM_HEIGHT):
+    for x in range(DIGIT_DATUM_WIDTH):
+      if datum.getPixel(x, y) > 0:
+        print "X",
+      else:
+        print " ",
+    print
+  
+  def isLoop(startx, starty):
+    x = startx
+              
+
+
+
+
 
   "*** YOUR CODE HERE ***"
   
