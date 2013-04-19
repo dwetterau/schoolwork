@@ -92,7 +92,7 @@ def enhancedFeatureExtractorDigit(datum):
         left += datum.getPixel(x, y)
       else:
         right += datum.getPixel(x, y)
-
+  
   total = float(top + bottom)
   threshold = .45
 
@@ -113,13 +113,35 @@ def enhancedFeatureExtractorDigit(datum):
   else:
     features["right"] = 0
 
-  DENS_THRESH = .8
+  area = DIGIT_DATUM_HEIGHT*DIGIT_DATUM_WIDTH/2.0
+  """
+  print "top_dens", features["top_dens"], top/area
+  print "bot_dens", features["bot_dens"], bottom/area
+  print "right_dens", features["right_dens"], right/area
+  print "left_dens", features["left_dens"], left/area
+  """
+  eps = .95
+  if abs(min(top, bottom)/ float(max(top, bottom))) > eps:
+    features["top_dens"] = 1
+    features["bot_dens"] = 1
+  elif top > bottom:
+    features["top_dens"] = 1
+    features["bot_dens"] = 0
+  else:
+    features["top_dens"] = 0
+    features["bot_dens"] = 1
+  if abs(min(left, right)/ float(max(left, right))) > eps:
+    features["left_dens"] = 1
+    features["right_dens"] = 1
+  elif left > right:
+    features["left_dens"] = 1
+    features["right_dens"] = 0
+  else:
+    features["left_dens"] = 0
+    features["right_dens"] = 1
 
-  features["top_dens"] = 1  if top / (DIGIT_DATUM_HEIGHT/2*DIGIT_DATUM_WIDTH) > DENS_THRESH else 0  
-  features["bot_dens"] = 1  if bottom / (DIGIT_DATUM_HEIGHT/2*DIGIT_DATUM_WIDTH) > DENS_THRESH else 0  
-  features["right_dens"] = 1  if right / (DIGIT_DATUM_WIDTH/2*DIGIT_DATUM_HEIGHT) > DENS_THRESH else 0  
-  features["left_dens"] = 1  if left / (DIGIT_DATUM_WIDTH/2*DIGIT_DATUM_HEIGHT) > DENS_THRESH else 0  
-  
+
+
   def isLoop(startx, starty):
     THRESH = 2
     x = startx
@@ -185,7 +207,17 @@ def enhancedFeatureExtractorDigit(datum):
       features['big_loop'] = 0
   features['top_loop'] = 1 if top_loop[0] else 0
   features['bottom_loop'] = 1 if bottom_loop[0] else 0
- 
+  """ 
+  for y in range(DIGIT_DATUM_HEIGHT):
+    cur = 0
+    for x in range(DIGIT_DATUM_WIDTH):
+      if datum.getPixel(x, y) > 0:
+        features[('c',cur,y)] = 1
+        cur += 1
+    while cur < DIGIT_DATUM_WIDTH:
+        features[('c',cur,y)] = 0
+        cur += 1
+  """
   """
   print 'big', features['big_loop']   
   print 'top_loop', features['top_loop']   
@@ -195,6 +227,18 @@ def enhancedFeatureExtractorDigit(datum):
   print 'right', features['right']   
   print 'left', features['left']   
   """
+  """
+  for y in range(1,DIGIT_DATUM_HEIGHT-1):
+    for x in range(1,DIGIT_DATUM_WIDTH-1):
+      val = datum.getPixel(x,y)
+      val_r = datum.getPixel(x+1, y)
+      val_d = datum.getPixel(x, y+1)
+      if not val == val_r or not val == val_d:
+        features[('g',x,y)] = 1
+      else:
+        features[('g',x,y)] = 0
+  """     
+
   return features
 
 
