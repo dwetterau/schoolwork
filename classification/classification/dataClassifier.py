@@ -67,26 +67,134 @@ def enhancedFeatureExtractorDigit(datum):
   # Small Bottom (one in bottom half)
   # Yeah this probably won't work too well.... We can still try it though...
 
-
-  # returns a True/False tuple and if true, also the total height
+  bottom_mid = (DIGIT_DATUM_WIDTH/2, 5*DIGIT_DATUM_HEIGHT/8)
+  top_mid = (DIGIT_DATUM_WIDTH/2, 3*DIGIT_DATUM_HEIGHT/8)
+  """
   for y in range(DIGIT_DATUM_HEIGHT):
     for x in range(DIGIT_DATUM_WIDTH):
-      if datum.getPixel(x, y) > 0:
+      if datum.getPixel(x, y) > 1:
         print "X",
       else:
         print " ",
     print
+  """
+  top = 0
+  bottom = 0
+  left = 0
+  right = 0
+  for y in range(DIGIT_DATUM_HEIGHT):
+    for x in range(DIGIT_DATUM_WIDTH):
+      if y < DIGIT_DATUM_HEIGHT/2:
+        top += datum.getPixel(x, y)
+      else:
+        bottom += datum.getPixel(x, y)
+      if x < DIGIT_DATUM_WIDTH/2:
+        left += datum.getPixel(x, y)
+      else:
+        right += datum.getPixel(x, y)
+
+  total = float(top + bottom)
+  threshold = .45
+
+  if top / total > threshold:
+    features["top"] = 1
+  else:
+    features["top"] = 0
+  if bottom / total > threshold:
+    features["bottom"] = 1
+  else:
+    features["bottom"] = 0
+  if left / total > threshold:
+    features["left"] = 1
+  else:
+    features["left"] = 0
+  if right / total > threshold:
+    features["right"] = 1
+  else:
+    features["right"] = 0
+
+  DENS_THRESH = .8
+
+  features["top_dens"] = 1  if top / (DIGIT_DATUM_HEIGHT/2*DIGIT_DATUM_WIDTH) > DENS_THRESH else 0  
+  features["bot_dens"] = 1  if bottom / (DIGIT_DATUM_HEIGHT/2*DIGIT_DATUM_WIDTH) > DENS_THRESH else 0  
+  features["right_dens"] = 1  if right / (DIGIT_DATUM_WIDTH/2*DIGIT_DATUM_HEIGHT) > DENS_THRESH else 0  
+  features["left_dens"] = 1  if left / (DIGIT_DATUM_WIDTH/2*DIGIT_DATUM_HEIGHT) > DENS_THRESH else 0  
   
   def isLoop(startx, starty):
+    THRESH = 2
     x = startx
-              
+    y = starty
+    minY, maxY = 0, 0
+    if datum.getPixel(x,y) > 0:
+        return (False, 0)
+    # Go right
+    dist = 0
+    while x < DIGIT_DATUM_WIDTH:
+        val = datum.getPixel(x,y)
+        if val > 1 or (dist > THRESH and val > 0):
+            break
+        x += 1
+        dist += 1
+        if x == DIGIT_DATUM_WIDTH:
+            return (False, 0)
+    x = startx
+    y = starty
+    dist = 0 
+    while x > 0:
+        val = datum.getPixel(x,y)
+        if val > 1 or (dist > THRESH and val > 0):
+            break
+        x -= 1
+        dist += 1
+        val = datum.getPixel(x,y)
+        if val > 1 or (dist > THRESH and val > 0):
+            break
+        if x == 0:
+            return (False, 0)
+    x = startx
+    y = starty
+    dist = 0
+    while y < DIGIT_DATUM_HEIGHT:
+        val = datum.getPixel(x,y)
+        if val > 1 or (dist > THRESH and val > 0):
+            maxY = y
+            break
+        y += 1
+        dist += 1
+        if y == DIGIT_DATUM_HEIGHT:
+            return (False, 0)
+    x = startx
+    y = starty
+    dist = 0 
+    while y > 0:
+        val = datum.getPixel(x,y)
+        if val > 1 or (dist > THRESH and val > 0):
+            minY = y
+            break
+        y -= 1
+        dist += 1
+        if x == 0:
+            return (False, 0)
+    return (True, maxY - minY)
 
-
-
-
-
-  "*** YOUR CODE HERE ***"
-  
+  top_loop = isLoop(top_mid[0], top_mid[1])
+  bottom_loop = isLoop(bottom_mid[0], bottom_mid[1])
+  if (top_loop[0] and top_loop[1] > .4*DIGIT_DATUM_HEIGHT) or (bottom_loop[0] and bottom_loop[1] > DIGIT_DATUM_HEIGHT/2):
+      features['big_loop'] = 1
+  else:
+      features['big_loop'] = 0
+  features['top_loop'] = 1 if top_loop[0] else 0
+  features['bottom_loop'] = 1 if bottom_loop[0] else 0
+ 
+  """
+  print 'big', features['big_loop']   
+  print 'top_loop', features['top_loop']   
+  print 'bottom_loop', features['bottom_loop']   
+  print 'top', features['top']   
+  print 'bottom', features['bottom']   
+  print 'right', features['right']   
+  print 'left', features['left']   
+  """
   return features
 
 
