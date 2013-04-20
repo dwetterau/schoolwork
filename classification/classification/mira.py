@@ -47,7 +47,6 @@ class MiraClassifier:
     representing a vector of values.
     """
     "*** YOUR CODE HERE ***"
-    print self.legalLabels
     self.features = trainingData[0].keys() # could be useful later
     allWeights = util.Counter()
     Cgrid.sort()

@@ -1,5 +1,7 @@
 import util
 import classificationMethod
+import naiveBayes
+import mira
 
 class contestClassifier(classificationMethod.ClassificationMethod):
   """
@@ -9,15 +11,18 @@ class contestClassifier(classificationMethod.ClassificationMethod):
   def __init__(self, legalLabels):
     self.guess = None
     self.type = "minicontest"
-  
+    self.classifier = naiveBayes.NaiveBayesClassifier(legalLabels)
+    #self.classifier = mira.MiraClassifier(legalLabels, 5)
+    self.classifier.automaticTuning = True
+
   def train(self, data, labels, validationData, validationLabels):
     """
     Please describe your training procedure here.
     """
-    raise Exception('not implemented')
+    self.classifier.train(data, labels, validationData, validationLabels)
   
   def classify(self, testData):
     """
     Please describe how data is classified here.
     """
-    raise Exception('not implemented')
+    return self.classifier.classify(testData)

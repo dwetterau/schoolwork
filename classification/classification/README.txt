@@ -1,0 +1,6 @@
+david       daw2572     david.wetterau@utexas.edu
+jmslocum    jms6879     jmslocum16@gmail.com
+
+For the first 5 parts we simply implemented the given formulas. We leveraged the counter class to do fast dot products and vector manipulation. On question 1 we used a multileveled counter for each distribution because we needed to store the probabilities of the value being 0 or 1. We then picked the best distribution. We performed a similar selection process for mira when iterating over the possible C values.
+
+For our special classifier we did 3 things. We first compared sides to see which one had more pixels on, and did the same for the difference between top and bottom. We also repeated the exercise with density. The thought process behind this was that some digits would be biased to one side or the other. For example a 6 should be biased to the right and towards the bottom. The other thing we did was a loop detection routine. We started at two points and if that starting point was originally not turned on, and then eventually turned to a pixel as you went R/L/U/D then it was determined to be a loop. This prevented us from adding too many features or performing a full floodfill algorithm to count actual loops. For cleaner detection we also leveraged the existence of some darker pixels that had a value of 2 instead of 1.

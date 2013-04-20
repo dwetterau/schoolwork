@@ -56,28 +56,25 @@ def enhancedFeatureExtractorDigit(datum):
   for this datum (datum is of type samples.Datum).
   
   ## DESCRIBE YOUR ENHANCED FEATURES HERE...
-  
+ 
+  Our features were the following:
+  - Left/Right and Top/Bottom Bias
+  - Left/Right and Top/Bottom Density preference
+  - Linear time upper and lower loop detection at an arbitrary midpoint
+  - Gets 83% on the validation and 84% on the testing data
+
+
   ##
   """
   features =  basicFeatureExtractorDigit(datum)
   # Loops feature. count the number of loops.
   # Big loop (Height > 2/3*HEIGHT)
-  # Two Loops (one in top half, one in bottom)
   # Small Top (one in top half)
   # Small Bottom (one in bottom half)
-  # Yeah this probably won't work too well.... We can still try it though...
 
   bottom_mid = (DIGIT_DATUM_WIDTH/2, 5*DIGIT_DATUM_HEIGHT/8)
   top_mid = (DIGIT_DATUM_WIDTH/2, 3*DIGIT_DATUM_HEIGHT/8)
-  """
-  for y in range(DIGIT_DATUM_HEIGHT):
-    for x in range(DIGIT_DATUM_WIDTH):
-      if datum.getPixel(x, y) > 1:
-        print "X",
-      else:
-        print " ",
-    print
-  """
+  
   top = 0
   bottom = 0
   left = 0
@@ -114,12 +111,7 @@ def enhancedFeatureExtractorDigit(datum):
     features["right"] = 0
 
   area = DIGIT_DATUM_HEIGHT*DIGIT_DATUM_WIDTH/2.0
-  """
-  print "top_dens", features["top_dens"], top/area
-  print "bot_dens", features["bot_dens"], bottom/area
-  print "right_dens", features["right_dens"], right/area
-  print "left_dens", features["left_dens"], left/area
-  """
+  
   eps = .95
   if abs(min(top, bottom)/ float(max(top, bottom))) > eps:
     features["top_dens"] = 1
@@ -207,37 +199,6 @@ def enhancedFeatureExtractorDigit(datum):
       features['big_loop'] = 0
   features['top_loop'] = 1 if top_loop[0] else 0
   features['bottom_loop'] = 1 if bottom_loop[0] else 0
-  """ 
-  for y in range(DIGIT_DATUM_HEIGHT):
-    cur = 0
-    for x in range(DIGIT_DATUM_WIDTH):
-      if datum.getPixel(x, y) > 0:
-        features[('c',cur,y)] = 1
-        cur += 1
-    while cur < DIGIT_DATUM_WIDTH:
-        features[('c',cur,y)] = 0
-        cur += 1
-  """
-  """
-  print 'big', features['big_loop']   
-  print 'top_loop', features['top_loop']   
-  print 'bottom_loop', features['bottom_loop']   
-  print 'top', features['top']   
-  print 'bottom', features['bottom']   
-  print 'right', features['right']   
-  print 'left', features['left']   
-  """
-  """
-  for y in range(1,DIGIT_DATUM_HEIGHT-1):
-    for x in range(1,DIGIT_DATUM_WIDTH-1):
-      val = datum.getPixel(x,y)
-      val_r = datum.getPixel(x+1, y)
-      val_d = datum.getPixel(x, y+1)
-      if not val == val_r or not val == val_d:
-        features[('g',x,y)] = 1
-      else:
-        features[('g',x,y)] = 0
-  """     
 
   return features
 
@@ -246,7 +207,7 @@ def contestFeatureExtractorDigit(datum):
   """
   Specify features to use for the minicontest
   """
-  features =  basicFeatureExtractorDigit(datum)
+  features =  enhancedFeatureExtractorDigit(datum)
   return features
 
 def enhancedFeatureExtractorFace(datum):
