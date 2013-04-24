@@ -99,8 +99,10 @@ class OffensiveAgent(ReflexCaptureAgent):
     self.observe(gameState)
     
     actions = gameState.getLegalActions(self.index)
-
     values = [self.evaluate(gameState, a) for a in actions]
+    
+    print actions
+    print values
     maxValue = max(values)
     
     bestActions = [a for a, v in zip(actions, values) if v == maxValue]
@@ -194,8 +196,8 @@ class OffensiveAgent(ReflexCaptureAgent):
             return
 
   def getGhostLocations(self, gameState):
-    ghost_states = []
-    pacman_states = []
+    ghost_states = {}
+    pacman_states = {}
 
     known = {}
     for i in self.getOpponents(gameState):
@@ -208,9 +210,9 @@ class OffensiveAgent(ReflexCaptureAgent):
 
         if dist in known:
             if is_ghost:
-              ghost_states.append(known[dist])
+              ghost_states[dist] = known[dist]
             else:
-              pacman_states.append(known[dist])
+              pacman_states[dist] = known[dist]
             self.distributions[dist] = util.Counter()
             self.distributions[dist][known[dist]] = 1
             continue
@@ -224,9 +226,9 @@ class OffensiveAgent(ReflexCaptureAgent):
             elif d[entry] == best_prob:
                 best_positions.append(entry)
         if is_ghost:
-            ghost_states.append(best_positions[0])
+            ghost_states[dist] = best_positions[0]
         else:
-            pacman_states.append(best_positions[0])
+            pacman_states[dist] = best_positions[0]
     return (ghost_states, pacman_states)
 
   def evaluateState(self, gameState, ghostPacmanStates):  
@@ -251,10 +253,15 @@ class OffensiveAgent(ReflexCaptureAgent):
       if dist > max_food_dist:
           max_food_dist = dist
     
-    for state in ghostPacmanStates[0]:
-      pos = state
+    for i in ghostPacmanStates[0]:
+      pos = ghostPacmanStates[0][i]
       dx, dy = abs(pos[0] - newPos[0]), abs(pos[1] - newPos[1])
       dist = self.distancer.getDistance(pos, newPos)
+      timer = gameState.getAgentState(i).scaredTimer
+      if timer > 0:
+        if dist == 0:
+            dist = .0001
+        kill_score += 1.4*timer / dist
       if dist < min_ghost_dist:
         min_ghost_dist = dist
       if dist > max_ghost_dist:
@@ -270,6 +277,7 @@ class OffensiveAgent(ReflexCaptureAgent):
       max_food_dist = 1
     return - 2*min_food_dist \
          - 80*count \
+         + kill_score \
          + 1.5/max_food_dist \
          - 5/max_ghost_dist \
          - 10/(min_ghost_dist) \
@@ -456,6 +464,38 @@ class DefensiveAgent(ReflexCaptureAgent):
         min_ghost_dist = dist if not known else dist/2.0
       if dist > max_ghost_dist:
         max_ghost_dist = dist
+    
+    global_min_dist_to_food = 2000000000
+    global_average_min_dist_to_food = 0
+
+    # Maximize distance from pacman to our food
+    """
+    if len(ghostPacmanStates[1]):
+      layout = gameState.data.layout
+      walls = layout.walls
+      walls[int(newPos[0])][int(newPos[1])] = True
+      new_distancer = distanceCalculator.Distancer(layout)
+      new_distancer.getMazeDistances()
+
+      for pacman in ghostPacmanStates[1]:
+        pos = pacman[0]
+        for food in food_list:    
+            dist = new_distancer.getDistance(pos, food)
+            print dist, self.distancer.getDistance(pos, food)
+            global_average_min_dist_to_food += dist
+            if dist < global_min_dist_to_food:
+                global_min_dist_to_food = dist
+
+    if len(ghostPacmanStates[1]) > 0:
+        global_average_min_dist_to_food /= float(count)*len(ghostPacmanStates[1])
+    
+    if global_min_dist_to_food == 2000000000:
+        global_min_dist_to_food = 0
+    """
+
+    if len(ghostPacmanStates[1]):
+        min_ghost_dist = 2000000000
+        max_ghost_dist = 2000000000
 
 
     if count == 2:
@@ -468,10 +508,18 @@ class DefensiveAgent(ReflexCaptureAgent):
       min_ghost_dist = .0001 
     if max_ghost_dist == 0:
       max_ghost_dist = .0001
-    return - 2*average \
+    toReturn = - 2*average \
          + 1000/max_pacman_dist \
          + 1000/(min_pacman_dist) \
-         + 500/max_ghost_dist \
-         + 500/min_ghost_dist \
-         #+ 80*count \
-
+         + 1000/max_ghost_dist \
+         + 1000/min_ghost_dist \
+        # + 100000*global_average_min_dist_to_food \
+        # + 100000*global_min_dist_to_food
+        
+    """
+    is_scared = gameState.getAgentState(self.index).scaredTimer > 0
+    if is_scared:
+        return -toReturn
+    else:
+    """
+    return toReturn
