@@ -389,7 +389,7 @@ class DefensiveAgent(ReflexCaptureAgent):
 
         if dist in known:
             if is_ghost:
-              ghost_states.append(known[dist])
+              ghost_states.append((known[dist], False))
             else:
               pacman_states.append((known[dist], True))
             self.distributions[dist] = util.Counter()
@@ -405,12 +405,16 @@ class DefensiveAgent(ReflexCaptureAgent):
             elif d[entry] == best_prob:
                 best_positions.append(entry)
         if is_ghost:
-            ghost_states.append(best_positions[0])
+            ghost_states.append((best_positions[0], False))
         else:
             pacman_states.append((best_positions[0] ,False))
     return (ghost_states, pacman_states)
 
   def evaluateState(self, gameState, ghostPacmanStates):  
+    # If defender is pacman, very bad
+    if gameState.getAgentState(self.index).isPacman:
+        return -2000000000
+
     state = gameState
     position = state.getAgentPosition(self.index)
     foodGrid = self.getFoodYouAreDefending(state) 
@@ -421,7 +425,8 @@ class DefensiveAgent(ReflexCaptureAgent):
    
     min_pacman_dist = 99999
     max_pacman_dist = 0
-    kill_score = 0
+    min_ghost_dist = 99999
+    max_ghost_dist = 0
     
     count = foodGrid.count()
     dist = 0
@@ -440,6 +445,18 @@ class DefensiveAgent(ReflexCaptureAgent):
         min_pacman_dist = dist if not known else dist/2.0
       if dist > max_pacman_dist:
         max_pacman_dist = dist
+    
+    for state in ghostPacmanStates[0]:
+      known = state[1]
+      state = state[0]
+      pos = state
+      dx, dy = abs(pos[0] - newPos[0]), abs(pos[1] - newPos[1])
+      dist = self.distancer.getDistance(pos, newPos)
+      if dist < min_ghost_dist:
+        min_ghost_dist = dist if not known else dist/2.0
+      if dist > max_ghost_dist:
+        max_ghost_dist = dist
+
 
     if count == 2:
       count = -2000000000 #if they win, bad
@@ -447,8 +464,14 @@ class DefensiveAgent(ReflexCaptureAgent):
       min_pacman_dist = .0001 
     if max_pacman_dist == 0:
       max_pacman_dist = .0001
+    if min_ghost_dist == 0:
+      min_ghost_dist = .0001 
+    if max_ghost_dist == 0:
+      max_ghost_dist = .0001
     return - 2*average \
          + 1000/max_pacman_dist \
          + 1000/(min_pacman_dist) \
+         + 500/max_ghost_dist \
+         + 500/min_ghost_dist \
          #+ 80*count \
 
