@@ -95,7 +95,7 @@ class ReflexCaptureAgent(CaptureAgent):
 
 class OffensiveAgent(ReflexCaptureAgent):
   def chooseAction(self, gameState):
-    self.legalPositions = [p for p in gameState.getWalls().asList(False) if p[1] > 1]   
+    self.legalPositions = [p for p in gameState.getWalls().asList(False) if p[1] >= 1]   
     self.observe(gameState)
     
     actions = gameState.getLegalActions(self.index)
@@ -131,32 +131,61 @@ class OffensiveAgent(ReflexCaptureAgent):
         for position in self.legalPositions:
             dist = distanceCalculator.manhattanDistance(position, pos)
             new_distributions[key][position] = gameState.getDistanceProb(dist, actual_distances[key])
-    for key in actual_distances:
-        for position in self.legalPositions:
-            if new_distributions[key][position] > 0:
-                val = new_distributions[key][position]  
-                left = (position[0]-1, position[1])
-                right = (position[0]+1, position[1])
-                top = (position[0], position[1]-1)
-                bot = (position[0], position[1]+1)
-
-                if left in self.legalPositions:
-                    new_distributions[key][left] += val
-                if right in self.legalPositions:
-                    new_distributions[key][right] += val
-                if top in self.legalPositions:
-                    new_distributions[key][top] += val
-                if bot in self.legalPositions:
-                    new_distributions[key][bot] += val
-    
+        
     if hasattr(self, 'distributions'): 
         for key in actual_distances:
             for entry in new_distributions[key]:
                 self.distributions[key][entry] *= new_distributions[key][entry]
     else:
         self.distributions = new_distributions
-    for d in self.distributions:
-        self.distributions[d].normalize()
+    
+    for key in actual_distances:
+        new_d = util.Counter()
+        for position in self.legalPositions:
+            val = self.distributions[key][position]
+            left = (position[0]-1, position[1])
+            right = (position[0]+1, position[1])
+            top = (position[0], position[1]-1)
+            bot = (position[0], position[1]+1)
+            new_d[position] += val
+            if left in self.legalPositions:
+                new_d[left] += val
+            if right in self.legalPositions:
+                new_d[right] += val
+            if top in self.legalPositions:
+                new_d[top] += val
+            if bot in self.legalPositions:
+                new_d[bot] += val
+        new_d.normalize()
+        self.distributions[key] = new_d
+
+    # Printing distribution routine for debugging 
+    """
+    for key in self.distributions:
+        best_positions = []
+        best_prob = 0
+        d = self.distributions[key]
+        for entry in self.distributions[key]:
+            if d[entry] > best_prob:
+                best_prob = d[entry]
+                best_positions = [entry]
+            elif d[entry] == best_prob:
+                best_positions.append(entry)
+        predicted = random.choice(best_positions)
+        print predicted
+        arr = [[0 for x in range(31)] for y in range(15)]
+        for element in self.distributions[key]:
+            arr[element[1]][element[0]] = self.distributions[key][element]
+        for r in range(15,0,-1):
+            for c in range(31):
+              if (c,r) == predicted:
+                print '@',
+              elif (c, r) in self.legalPositions:
+                print '-' if arr[r][c] else ' ', 
+              else:
+                print "#",
+            print
+    """ 
     for key in self.distributions:
         allZero = True
         for entry in self.distributions[key]:
