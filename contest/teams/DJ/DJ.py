@@ -98,17 +98,29 @@ class OffensiveAgent(ReflexCaptureAgent):
     self.legalPositions = [p for p in gameState.getWalls().asList(False) if p[1] >= 1]   
     self.observe(gameState)
     
+    if hasattr(self, 'lastAction') and self.lastAction == 'Stop':
+        if hasattr(self, 'stuckCounter'):
+            self.stuckCounter += 1
+        else:
+            self.stuckCounter = 1
+        if self.stuckCounter > 4:
+            self.stuckCounter = 0
+            self.invert = 4
+    
     actions = gameState.getLegalActions(self.index)
     values = [self.evaluate(gameState, a) for a in actions]
     
-    print actions
-    print values
+    if hasattr(self, 'invert'):
+        if self.invert > 0:
+            self.invert -= 1
+
     maxValue = max(values)
-    
+     
     bestActions = [a for a, v in zip(actions, values) if v == maxValue]
 
-    return random.choice(bestActions)
-
+    action =  random.choice(bestActions)
+    self.lastAction = action
+    return action
 
   def evaluate(self, gameState, action):
     successor_state = self.getSuccessor(gameState, action)
@@ -261,7 +273,7 @@ class OffensiveAgent(ReflexCaptureAgent):
       if timer > 0:
         if dist == 0:
             dist = .0001
-        kill_score += 1.4*timer / dist
+        kill_score += 1.4*timer / (dist**2)
       if dist < min_ghost_dist:
         min_ghost_dist = dist
       if dist > max_ghost_dist:
@@ -275,27 +287,36 @@ class OffensiveAgent(ReflexCaptureAgent):
       max_ghost_dist = 1
     if max_food_dist == 0:
       max_food_dist = 1
-    return - 2*min_food_dist \
+    toReturn = - 2*min_food_dist \
          - 80*count \
          + kill_score \
          + 1.5/max_food_dist \
          - 5/max_ghost_dist \
-         - 10/(min_ghost_dist) \
+         - 10/(min_ghost_dist) 
+    
+    if hasattr(self, 'invert') and self.invert > 0:
+        return -toReturn
+    else:
+        return toReturn
 
 class DefensiveAgent(ReflexCaptureAgent):
   def chooseAction(self, gameState):
     self.legalPositions = [p for p in gameState.getWalls().asList(False) if p[1] >= 1]   
-    self.observe(gameState)
     
+    self.currentPosition = gameState.getAgentState(self.index).getPosition()
+    self.observe(gameState)
     actions = gameState.getLegalActions(self.index)
 
     values = [self.evaluate(gameState, a) for a in actions]
+       
     maxValue = max(values)
     
+
+
     bestActions = [a for a, v in zip(actions, values) if v == maxValue]
 
-    return random.choice(bestActions)
-
+    action = random.choice(bestActions)
+    return action
 
   def evaluate(self, gameState, action):
     successor_state = self.getSuccessor(gameState, action)
@@ -412,19 +433,24 @@ class DefensiveAgent(ReflexCaptureAgent):
                 best_positions = [entry]
             elif d[entry] == best_prob:
                 best_positions.append(entry)
-        if is_ghost:
-            ghost_states.append((best_positions[0], False))
+
+        #new_pos = random.choice(best_positions)
+        new_pos = best_positions[0]
+        our_side = gameState.getAgentPosition(self.index)[0] - gameState.data.layout.width/2 > 0
+        their_side = new_pos[0] - gameState.data.layout.width/2 > 0
+        if is_ghost and not our_side == their_side:
+            ghost_states.append((new_pos, False))
         else:
-            pacman_states.append((best_positions[0] ,False))
+            pacman_states.append((new_pos ,False))
     return (ghost_states, pacman_states)
 
   def evaluateState(self, gameState, ghostPacmanStates):  
     # If defender is pacman, very bad
-    if gameState.getAgentState(self.index).isPacman:
-        return -2000000000
-
     state = gameState
     position = state.getAgentPosition(self.index)
+    if gameState.getAgentState(self.index).isPacman or abs(position[0] - self.currentPosition[0]) > 1 or abs(position[1] - self.currentPosition[1]) > 1:
+        return -2000000000
+
     foodGrid = self.getFoodYouAreDefending(state) 
     walls = state.getWalls()
     food_list = foodGrid.asList()
@@ -461,7 +487,7 @@ class DefensiveAgent(ReflexCaptureAgent):
       dx, dy = abs(pos[0] - newPos[0]), abs(pos[1] - newPos[1])
       dist = self.distancer.getDistance(pos, newPos)
       if dist < min_ghost_dist:
-        min_ghost_dist = dist if not known else dist/2.0
+        min_ghost_dist = dist if not known or dist < 2 else dist/2.0
       if dist > max_ghost_dist:
         max_ghost_dist = dist
     
@@ -492,11 +518,14 @@ class DefensiveAgent(ReflexCaptureAgent):
     if global_min_dist_to_food == 2000000000:
         global_min_dist_to_food = 0
     """
-
+    #print "Beginning of evaluation for one of the moves ======================================"
     if len(ghostPacmanStates[1]):
+        average = 0
         min_ghost_dist = 2000000000
         max_ghost_dist = 2000000000
-
+    else:
+        min_pacman_dist = 2000000000
+        max_pacman_dist = 2000000000
 
     if count == 2:
       count = -2000000000 #if they win, bad
@@ -508,18 +537,20 @@ class DefensiveAgent(ReflexCaptureAgent):
       min_ghost_dist = .0001 
     if max_ghost_dist == 0:
       max_ghost_dist = .0001
+
+    #print "average", average, "max_pacman_dist", max_pacman_dist, "min_pacman_Dist", min_pacman_dist
+    #print "max_ghost_dist", max_ghost_dist, "min_ghost_dist", min_ghost_dist
+    #print "End of evaluation for one of the moves ======================================"
     toReturn = - 2*average \
-         + 1000/max_pacman_dist \
-         + 1000/(min_pacman_dist) \
-         + 1000/max_ghost_dist \
-         + 1000/min_ghost_dist \
+         + 200/max_pacman_dist \
+         + 200/min_pacman_dist \
+         + 8000/max_ghost_dist \
+         + 8000/min_ghost_dist \
         # + 100000*global_average_min_dist_to_food \
         # + 100000*global_min_dist_to_food
         
-    """
-    is_scared = gameState.getAgentState(self.index).scaredTimer > 0
-    if is_scared:
+    
+    """if hasattr(self, 'invert') and self.invert > 0:
         return -toReturn
-    else:
-    """
+    else:"""
     return toReturn

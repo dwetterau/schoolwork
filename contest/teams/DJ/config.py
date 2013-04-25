@@ -41,7 +41,7 @@ TeamName = 'DJ'
 # Filename.FactoryClassName (CASE-sensitive)
 AgentFactory = 'DJ.DJ'
 
-Partners = ['David Wetterau', 'Josh Slocum']
+Partners = ['David Wetterau', 'david', 'daw2572', 'Josh Slocum', 'jmslocum', 'jms6879']
 
 AgentArgs = {'first':'offense', 'second':'defense'}
 
