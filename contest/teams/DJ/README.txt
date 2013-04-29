@@ -1,5 +1,5 @@
-david daw2572   David Wetterau
-jmslocum        Josh Slocum
+david       daw2572   David Wetterau
+jmslocum    jms6879   Josh Slocum
 
 Agent name/folder/factory: DJ
 
