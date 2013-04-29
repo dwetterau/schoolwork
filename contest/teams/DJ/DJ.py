@@ -541,7 +541,7 @@ class DefensiveAgent(ReflexCaptureAgent):
     #print "average", average, "max_pacman_dist", max_pacman_dist, "min_pacman_Dist", min_pacman_dist
     #print "max_ghost_dist", max_ghost_dist, "min_ghost_dist", min_ghost_dist
     #print "End of evaluation for one of the moves ======================================"
-    toReturn = - 2*average \
+    toReturn = - 200/float(count)*average \
          + 200/max_pacman_dist \
          + 200/min_pacman_dist \
          + 8000/max_ghost_dist \
